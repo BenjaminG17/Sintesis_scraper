@@ -1,4 +1,5 @@
 from .config import load_settings, load_actions, load_env
+from.selenium_driver import build_driver
 
 def obtener_lista_municipios(settings: dict) -> list[str]:
     """
@@ -45,7 +46,19 @@ def main():
     if modules:
         print(f"primer módulo id : {modules[0].get('id')}")
         print(f"url_pattern      : {modules[0].get('url_pattern')}")
+    
+    ## Aquí se realiza la prueba del driver
+    print("\n=== DRIVER ===")
+    print("Inicializando driver de Selenium...")
 
+    driver = build_driver(
+        headless=env["HEADLESS"],
+        download_root=env["DOWNLOAD_ROOT"],
+    )
+
+    print("Driver inicializado correctamente. Cerrando navegador...")
+    driver.quit()
+    print("Navegador cerrado. Fin de main().")
 
 if __name__ == "__main__":
     main()
