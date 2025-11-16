@@ -1,0 +1,26 @@
+{
+  "base_url": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/",
+  "org_start": 1,
+  "org_end": 345,
+
+  "excluded_orgs": [
+    "MU999"
+  ],
+
+  "start_year": 2018,
+
+  "months": [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ]
+}

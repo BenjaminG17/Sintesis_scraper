@@ -1,0 +1,48 @@
+{
+  "modules": [
+    {
+      "id": "municipio_generico",
+      "url_pattern": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/?org={org}",
+
+      "actions": [
+        {
+          "description": "Aceptar cookies si aparece",
+          "xpath": "//button[contains(., 'Aceptar') and contains(., 'cookie')]",
+          "action": "click",
+          "optional": true
+        },
+        {
+          "description": "Ir a la sección donde se ve el personal (contrata/planta)",
+          "xpath": "//a[contains(., 'Transparencia') or contains(., 'Personal')]",
+          "action": "click",
+          "optional": false
+        }
+      ],
+
+      "scraping_actions": [
+        {
+          "type": "select_tipo_personal",
+          "selector_button": "//button[contains(., 'Tipo de personal')]",
+          "options": [
+            { "text": "Contrata", "value": "CONTRATA" },
+            { "text": "Planta",   "value": "PLANTA" }
+          ]
+        },
+        {
+          "type": "select_anio",
+          "selector_button": "//button[contains(., 'Año')]",
+          "options_from_settings": true
+        },
+        {
+          "type": "select_mes",
+          "selector_button": "//button[contains(., 'Mes')]",
+          "options_from_settings": true
+        },
+        {
+          "type": "download_csv",
+          "selector_button": "//button[contains(., 'CSV') or contains(., 'Descargar')]"
+        }
+      ]
+    }
+  ]
+}
