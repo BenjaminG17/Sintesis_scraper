@@ -1,6 +1,4 @@
-from .config import load_settings, load_actions
-
-
+from .config import load_settings, load_actions, load_env
 
 def obtener_lista_municipios(settings: dict) -> list[str]:
     """
@@ -23,6 +21,7 @@ def obtener_lista_municipios(settings: dict) -> list[str]:
 def main():
     settings = load_settings()
     actions = load_actions()
+    env=load_env()
 
     orgs= obtener_lista_municipios(settings)
 
@@ -33,6 +32,12 @@ def main():
     print(f"start_year : {settings.get('start_year')}")
     print(f"months     : {settings.get('months')}")
     print(f"orgs (modo actual): {orgs}")
+
+    print("\n=== ENV ===")
+    print(f"HEADLESS      : {env['HEADLESS']}")
+    print(f"DOWNLOAD_ROOT : {env['DOWNLOAD_ROOT']}")
+    print(f"STAGING_DIR   : {env['STAGING_DIR']}")
+    print(f"FINAL_DIR     : {env['FINAL_DIR']}")
 
     print("\n=== ACTIONS ===")
     modules = actions.get("modules", [])
