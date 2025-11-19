@@ -3,7 +3,6 @@ import json
 import os
 from dotenv import load_dotenv
 
-
 # Carpeta raíz del proyecto (donde está la carpeta configs/)
 BASE_DIR = Path(__file__).resolve().parent.parent
 

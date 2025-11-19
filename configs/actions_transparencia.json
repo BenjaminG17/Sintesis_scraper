@@ -6,12 +6,6 @@
 
       "actions": [
         {
-          "description": "Aceptar cookies si aparece",
-          "xpath": "//button[contains(., 'Aceptar') and contains(., 'cookie')]",
-          "action": "click",
-          "optional": true
-        },
-        {
           "description": "Ir a la sección donde se ve el personal (contrata/planta)",
           "xpath": "//a[contains(., 'Transparencia') or contains(., 'Personal')]",
           "action": "click",

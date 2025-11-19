@@ -1,5 +1,6 @@
 from .config import load_settings, load_actions, load_env
 from.selenium_driver import build_driver
+from .transparencia_workflow import procesar_municipio
 
 def obtener_lista_municipios(settings: dict) -> list[str]:
     """
@@ -55,10 +56,22 @@ def main():
         headless=env["HEADLESS"],
         download_root=env["DOWNLOAD_ROOT"],
     )
+    try:
+        print("Driver inicializado correctamente.")
 
-    print("Driver inicializado correctamente. Cerrando navegador...")
-    driver.quit()
-    print("Navegador cerrado. Fin de main().")
+        # Para este paso 7: solo probamos con el primer municipio de la lista.
+        if not orgs:
+            print("[WARN] No hay municipios configurados en settings.")
+            return
+
+        org_code = orgs[0]
+        print(f"\n=== PROCESANDO MUNICIPIO DE PRUEBA: {org_code} ===")
+        procesar_municipio(driver, org_code, settings, actions)
+
+    finally:
+        print("\nCerrando navegador...")
+        driver.quit()
+        print("Navegador cerrado. Fin de main().")
 
 if __name__ == "__main__":
     main()
