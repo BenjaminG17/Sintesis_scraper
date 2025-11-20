@@ -81,19 +81,33 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 
     tipos_personal = ["CONTRATA", "PLANTA"]
 
+    resultados={}
+
     for tipo in tipos_personal:
         print(f"\n[INFO]({org_code}) - Abriendo tipo de personal {tipo}")
-        print(f"\n[INFO]({org_code}) - Abriendo tipo de personal {tipo}")
         driver.get(url)
+        driver.implicitly_wait(2)
         
-        # Si en el futuro añadimos acciones iniciales (por ejemplo ir a "Transparencia activa"),
+        # Si en el futuro añadimos acciones iniciales (por ejemplo ir a "Subsidios y beneficios"),
         # las ejecutaríamos aquí:
         # _ejecutar_actions_iniciales(driver, modulo, org_code)
 
         
-        # FASE PRUEBA: abrir directamente el tipo de personal CONTRATA
-        _abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
-        print(f"[INFO] ({org_code}) Fin de fase tipo_personal ={tipo}")
+        # Abrir el tipo de personal y guardar resultado
+        exito=_abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
+        resultados[tipo]=exito
+
+        if exito:
+            print(f"[INFO] ({org_code}) Fin de fase tipo_personal '{tipo}' - EXITO.")
+        else:
+            print(f"[INFO] ({org_code}) Fin de fase tipo_personal '{tipo}' - FALLÓ")
+    
+    #RESUMEN 
+    print(f"\n[RESUMEN] Resultados para {org_code}:")
+    for tipo, exito in resultados.items():
+        status="EXITO" if exito else "FALLÓ"
+        print(f"   - Tipo de personal '{tipo}': {status}")
+    return resultados
 
 def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 15):
     """
@@ -132,16 +146,42 @@ def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: st
     wait = WebDriverWait(driver, timeout)
     print(f"[ACTION] {org_code} - Abriendo tipo de personal '{tipo}'")
 
-    ultimo_error = None
-    for xp in xpaths:
+    intentos_fallidos=[]
+
+    for i,xp in enumerate(xpaths,1):
         try:
             elemento = wait.until(EC.element_to_be_clickable((By.XPATH, xp)))
             elemento.click()
-            print(f"[OK] Abierto tipo '{tipo}' con xpath: {xp}")
-            return
-        except (TimeoutException, NoSuchElementException) as e:
-            print(f"[WARN] No se pudo clickear xpath '{xp}' para tipo '{tipo}'. Error: {e}")
-            ultimo_error = e
-            continue
 
-    print(f"[ERROR] No se pudo abrir el tipo de personal '{tipo}' para {org_code}. Último error: {ultimo_error}")
+            # SI FUNCIONA - Mostrar resumen
+            if intentos_fallidos:
+                print(f"[OK] {org_code} - tipo '{tipo}' abierto en intento #{i}")
+                print(f"XPath exitoso:{xp}")
+                print(f"Intentos fallidos previos {len(intentos_fallidos)}")
+            else:
+                print(f"[OK] {org_code} - tipo '{tipo}' abierto en el primer intento")
+                print(f"XPath: {xp}")
+
+            return True
+        
+        except (TimeoutException, NoSuchElementException) as e:
+            #Guardar el intento fallido
+            intentos_fallidos.append(f"XPath {i}: {xp}")
+            print(f"[INTENTO] {org_code} - XPath #{i} falló para tipo '{tipo}'")
+            
+    print(f"[ERROR] {org_code} No se pudo abrir el tipo de personal '{tipo}'")
+    print(f"        Total de XPaths intentados: {len(xpaths)}")
+    print("         XPaths probados:")
+    for xp_info in intentos_fallidos:
+        print(f"           - {xp_info}")
+    return False
+
+def espera_click (driver,xpath, timeout=15):
+    try:
+        elemento =WebDriverWait(driver, timeout).until(
+            EC.element_to_be_clickable((By.XPATH, xpath))
+        )
+        elemento.click()
+        return True
+    except:
+        return False

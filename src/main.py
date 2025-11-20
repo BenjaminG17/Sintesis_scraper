@@ -64,9 +64,16 @@ def main():
             print("[WARN] No hay municipios configurados en settings.")
             return
 
-        org_code = orgs[0]
-        print(f"\n=== PROCESANDO MUNICIPIO DE PRUEBA: {org_code} ===")
-        procesar_municipio(driver, org_code, settings, actions)
+        n=1
+        for org in orgs:
+            
+            print(f"\n=== PROCESANDO MUNICIPIO: {org} ===")
+            procesar_municipio(driver, org, settings, actions)    
+            print(f"\n=== MUNICIPIO {org} PROCESADO ({n}/{len(orgs)}) ===")
+            n+=1
+#        org_code = orgs[0]
+#        print(f"\n=== PROCESANDO MUNICIPIO DE PRUEBA: {org_code} ===")
+#        procesar_municipio(driver, org_code, settings, actions)
 
     finally:
         print("\nCerrando navegador...")

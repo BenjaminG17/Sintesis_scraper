@@ -13,6 +13,7 @@
             {
               "value": "CONTRATA",
               "xpaths": [
+                "//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'personal a contrata')]",
                 "//a[contains(normalize-space(.), 'Personal a Contrata')]",
                 "//a[contains(normalize-space(.), 'Personal a contrata')]"
               ]
@@ -20,6 +21,7 @@
             {
               "value": "PLANTA",
               "xpaths": [
+                "//a[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'personal de planta')]",
                 "//a[contains(normalize-space(.), 'Personal de Planta')]",
                 "//a[contains(normalize-space(.), 'Personal de planta')]",
                 "//a[contains(normalize-space(.), 'Personal a Planta')]"
