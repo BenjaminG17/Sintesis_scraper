@@ -79,19 +79,21 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 
     url = url_pattern.format(org=org_code)
 
-    print(f"\n[INFO] Abriendo municipio {org_code} -> {url}")
-    driver.get(url)
+    tipos_personal = ["CONTRATA", "PLANTA"]
 
-    # Aquí podríamos agregar una espera genérica de carga inicial si es necesario
-    # por ahora confiamos en las esperas explícitas de las acciones.
-    #1.- Acciones iniciales (no hay nada por ahora)
-    _ejecutar_actions_iniciales(driver, modulo, org_code)
-    print(f"[INFO] Acciones iniciales finalizadas para {org_code}")
+    for tipo in tipos_personal:
+        print(f"\n[INFO]({org_code}) - Abriendo tipo de personal {tipo}")
+        print(f"\n[INFO]({org_code}) - Abriendo tipo de personal {tipo}")
+        driver.get(url)
+        
+        # Si en el futuro añadimos acciones iniciales (por ejemplo ir a "Transparencia activa"),
+        # las ejecutaríamos aquí:
+        # _ejecutar_actions_iniciales(driver, modulo, org_code)
 
-    # FASE PRUEBA: abrir directamente el tipo de personal CONTRATA
-    _abrir_tipo_personal(driver, modulo, org_code, tipo="CONTRATA")
-
-    print(f"[INFO] Fin de procesar_municipio (fase tipo_personal=CONTRATA) para {org_code}")
+        
+        # FASE PRUEBA: abrir directamente el tipo de personal CONTRATA
+        _abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
+        print(f"[INFO] ({org_code}) Fin de fase tipo_personal ={tipo}")
 
 def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 15):
     """

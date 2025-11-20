@@ -16,5 +16,5 @@ El objetivo es mantener un diseño modular, limpio y escalable, que permita:
 
 En pasos posteriores se implementará:
 - Selenium Driver configurado para descargas.
-- Manejo de acciones con JSON (similar a `actions.js` de la práctica).
+- Manejo de acciones con JSON 
 - Flujo completo de scraping por municipio.
