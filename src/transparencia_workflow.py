@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
+
 def _obtener_modulo_generico(actions_cfg: Dict[str, Any]) -> Dict[str, Any]:
     """
     Obtiene el módulo 'municipio_generico' desde actions_transparencia.json.
@@ -21,7 +22,6 @@ def _obtener_modulo_generico(actions_cfg: Dict[str, Any]) -> Dict[str, Any]:
 
     # fallback: primer módulo
     return modules[0]
-
 
 def _ejecutar_actions_iniciales(driver, modulo: Dict[str, Any], org_code: str, timeout: int = 15):
     """
@@ -67,7 +67,8 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
     Primera versión de procesar_municipio:
     - Construye la URL del municipio usando url_pattern del módulo genérico.
     - Abre la página del municipio.
-    - Ejecuta las acciones iniciales (ir a sección personal).
+    - Ejecuta las acciones iniciales (vacias).
+    -Intenta hacer click en el boton 'Tipo de personal'.
     """
 
     modulo = _obtener_modulo_generico(actions_cfg)
@@ -83,5 +84,62 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 
     # Aquí podríamos agregar una espera genérica de carga inicial si es necesario
     # por ahora confiamos en las esperas explícitas de las acciones.
+    #1.- Acciones iniciales (no hay nada por ahora)
     _ejecutar_actions_iniciales(driver, modulo, org_code)
     print(f"[INFO] Acciones iniciales finalizadas para {org_code}")
+
+    # FASE PRUEBA: abrir directamente el tipo de personal CONTRATA
+    _abrir_tipo_personal(driver, modulo, org_code, tipo="CONTRATA")
+
+    print(f"[INFO] Fin de procesar_municipio (fase tipo_personal=CONTRATA) para {org_code}")
+
+def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 15):
+    """
+    Abre la página del tipo de personal indicado (CONTRATA o PLANTA),
+    utilizando los XPaths configurados en scraping_actions (por texto del enlace).
+    """
+    scraping_actions = modulo.get("scraping_actions", [])
+    config_tipo = None
+
+    # Buscar la acción tipo 'open_tipo_personal'
+    for sa in scraping_actions:
+        if sa.get("type") == "open_tipo_personal":
+            config_tipo = sa
+            break
+
+    if not config_tipo:
+        print(f"[WARN] No se encontró configuración 'open_tipo_personal' en scraping_actions.")
+        return
+
+    # Buscar la opción correspondiente al tipo solicitado
+    option = None
+    for opt in config_tipo.get("options", []):
+        if opt.get("value") == tipo:
+            option = opt
+            break
+
+    if not option:
+        print(f"[WARN] No hay opción configurada para tipo_personal='{tipo}' en 'open_tipo_personal'.")
+        return
+
+    xpaths = option.get("xpaths") or []
+    if not xpaths:
+        print(f"[WARN] La opción '{tipo}' no tiene xpaths definidos.")
+        return
+
+    wait = WebDriverWait(driver, timeout)
+    print(f"[ACTION] {org_code} - Abriendo tipo de personal '{tipo}'")
+
+    ultimo_error = None
+    for xp in xpaths:
+        try:
+            elemento = wait.until(EC.element_to_be_clickable((By.XPATH, xp)))
+            elemento.click()
+            print(f"[OK] Abierto tipo '{tipo}' con xpath: {xp}")
+            return
+        except (TimeoutException, NoSuchElementException) as e:
+            print(f"[WARN] No se pudo clickear xpath '{xp}' para tipo '{tipo}'. Error: {e}")
+            ultimo_error = e
+            continue
+
+    print(f"[ERROR] No se pudo abrir el tipo de personal '{tipo}' para {org_code}. Último error: {ultimo_error}")

@@ -21,7 +21,7 @@ def build_driver(headless: bool = True, download_root: str = "./data/raw"):
 
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1620,1080")
+    options.add_argument("--window-size=1600,1080")
 
     # Preferencias de descarga
     prefs = {

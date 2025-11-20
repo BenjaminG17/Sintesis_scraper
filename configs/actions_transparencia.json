@@ -4,22 +4,27 @@
       "id": "municipio_generico",
       "url_pattern": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/?org={org}",
 
-      "actions": [
-        {
-          "description": "Ir a la sección donde se ve el personal (contrata/planta)",
-          "xpath": "//a[contains(., 'Transparencia') or contains(., 'Personal')]",
-          "action": "click",
-          "optional": false
-        }
-      ],
+      "actions": [],
 
       "scraping_actions": [
         {
-          "type": "select_tipo_personal",
-          "selector_button": "//button[contains(., 'Tipo de personal')]",
+          "type": "open_tipo_personal",
           "options": [
-            { "text": "Contrata", "value": "CONTRATA" },
-            { "text": "Planta",   "value": "PLANTA" }
+            {
+              "value": "CONTRATA",
+              "xpaths": [
+                "//a[contains(normalize-space(.), 'Personal a Contrata')]",
+                "//a[contains(normalize-space(.), 'Personal a contrata')]"
+              ]
+            },
+            {
+              "value": "PLANTA",
+              "xpaths": [
+                "//a[contains(normalize-space(.), 'Personal de Planta')]",
+                "//a[contains(normalize-space(.), 'Personal de planta')]",
+                "//a[contains(normalize-space(.), 'Personal a Planta')]"
+              ]
+            }
           ]
         },
         {
