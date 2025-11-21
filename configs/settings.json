@@ -2,6 +2,7 @@
   "base_url": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/",
   "org_start": 1,
   "org_end": 345,
+    
 
   "orgs": [
     "MU244",
@@ -19,7 +20,7 @@
     "MU127",
     "MU191",
     "MU013",
-    "MU239"
+    "MU239"    
   ],
 
   "excluded_orgs": [

@@ -1,24 +1,23 @@
 from .config import load_settings, load_actions, load_env
 from.selenium_driver import build_driver
 from .transparencia_workflow import procesar_municipio
+import time 
 
 def obtener_lista_municipios(settings: dict) -> list[str]:
     """
-    Devuelve la lista de códigos MUxxx a procesar.
-
     - Si 'orgs' en settings tiene valores, usamos esa lista (modo test).
     - Si 'orgs' está vacío o no existe, usamos el rango org_start..org_end.
     """
     orgs_config = settings.get("orgs") or []
 
     if orgs_config:
-        # Ya vienen códigos tipo "MU042", "MU120", etc.
         return orgs_config
 
     # Modo rango completo
     org_start = settings.get("org_start", 1)
     org_end = settings.get("org_end", 345)
     return [f"MU{n:03d}" for n in range(org_start, org_end + 1)]
+
 
 def main():
     settings = load_settings()
@@ -59,22 +58,40 @@ def main():
     try:
         print("Driver inicializado correctamente.")
 
-        # Para este paso 7: solo probamos con el primer municipio de la lista.
+        
         if not orgs:
             print("[WARN] No hay municipios configurados en settings.")
             return
+        
 
+        tiempo_inicio=time.time()
         n=1
         for org in orgs:
             
             print(f"\n=== PROCESANDO MUNICIPIO: {org} ===")
-            procesar_municipio(driver, org, settings, actions)    
-            print(f"\n=== MUNICIPIO {org} PROCESADO ({n}/{len(orgs)}) ===")
-            n+=1
-#        org_code = orgs[0]
-#        print(f"\n=== PROCESANDO MUNICIPIO DE PRUEBA: {org_code} ===")
-#        procesar_municipio(driver, org_code, settings, actions)
+            t_inicio_muni=time.time()
+            procesar_municipio(driver, org, settings, actions)  
 
+            t_final_muni=time.time()  
+            duracion=t_final_muni - t_inicio_muni
+
+            print(f"\n=== MUNICIPIO {org} PROCESADO ({n}/{len(orgs)}) ===")
+            print(f"⏱️ Tiempo municipal: {duracion:.2f} segundos")
+            n+=1
+
+        tiempo_final=time.time()
+        total=tiempo_final - tiempo_inicio
+
+        horas = int(total // 3600)
+        minutos = int((total % 3600) // 60)
+        segundos = int(total % 60)
+
+        print(
+            f"\n[TIEMPO] Tiempo total de ejecución: "
+            f"{horas:02d}:{minutos:02d}:{segundos:02d} (hh:mm:ss)"
+        )
+        # ==========================================
+        
     finally:
         print("\nCerrando navegador...")
         driver.quit()

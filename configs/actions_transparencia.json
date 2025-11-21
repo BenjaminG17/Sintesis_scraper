@@ -28,6 +28,26 @@
               ]
             }
           ]
+        },    
+        {
+          "type": "select_area",
+          "options": [
+            {
+              "value": "MUNICIPAL",
+              "xpaths": [
+                "//a[contains(@class,'tab-link') and normalize-space(.)='Municipal']",
+                "//a[contains(@class,'tab-link') and normalize-space(.)='Municipalidad']",
+
+                "//a[normalize-space(.)='Municipalidad']",
+                "//a[normalize-space(.)='Municipal']",
+
+                
+                "//a[contains(normalize-space(.), 'Personal a Contrata Municipal')]",
+                "//a[contains(normalize-space(.), 'Personal de Planta Municipal')]"
+                
+              ]
+            }
+          ]
         },
         {
           "type": "select_anio",
