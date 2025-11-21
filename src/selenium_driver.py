@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
@@ -19,9 +18,21 @@ def build_driver(headless: bool = True, download_root: str = "./data/raw"):
         # Nuevo modo headless (Chrome 109+)
         options.add_argument("--headless=new")
 
+    #Imitar un Chrome normal (Evitar que el sitio detecte headless)
+    options.add_argument(
+        "--user-agent="
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "AppleWebKit/537.36 (KHTML, like Gecko)"
+        "Chrome/121.0.0.0 Safari/537.36"
+    )
+    
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1600,1080")
+
+    #Opciones para reducir señales ded automatización
+    options.add_experimental_option("excludeSwitches",["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
 
     # Preferencias de descarga
     prefs = {
@@ -32,8 +43,21 @@ def build_driver(headless: bool = True, download_root: str = "./data/raw"):
     }
     options.add_experimental_option("prefs", prefs)
 
-    # Usamos selenium-wire para poder inspeccionar requests más adelante si queremos
     driver = webdriver.Chrome(options=options)
+    #Más camuflaje, se quita el navigator.webdriver
+    try:
+        driver.execute_cdp_cmd(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {
+                "source":"""
+                Object.defineProperty(navigator,'webdriver',
+                                      get:() => undefined
+                });
+                """
+            },
+        )
+    except Exception as e:
+        print(f"[WARN] No se pudo ajustar navigator.webdriver:{e}")
     driver.set_page_load_timeout(60)
 
     return driver

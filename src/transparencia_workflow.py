@@ -1,5 +1,7 @@
 from typing import Dict, Any
+from pathlib import Path
 
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -60,8 +62,27 @@ def _ejecutar_actions_iniciales(driver, modulo: Dict[str, Any], org_code: str, t
                 # Aquí podríamos decidir si rompemos o solo salimos de este municipio.
                 # Por ahora, salimos de la función para este municipio:
                 return
+            
 
-
+def esperar_carga_municipio(driver,org_code:str, timeout: int = 20):
+    """
+    Espera hasta que la página del municipio haya termine de cargar.
+    comprobando que la pagina este completamente cargada
+    document.readyState == "complete"
+    """
+    try:
+        WebDriverWait(driver, timeout).until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )
+        print(f"[OK] ({org_code}) Página del municipio cargada correctamente (readyState=complete).")
+        return True
+    
+    except TimeoutException:
+        print(f"[ERROR] ({org_code}) La página del municipio no termino de cargar en {timeout}s.")
+        _guardar_screenshot(driver,org_code,"no_carga")
+        print(f"[ERROR] ({org_code}) La página del municipio no termino de cargar en {timeout}")
+        return False
+    
 def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_cfg: Dict[str, Any]):
     """
     Primera versión de procesar_municipio:
@@ -86,15 +107,16 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
     for tipo in tipos_personal:
         print(f"\n[INFO]({org_code}) - Abriendo tipo de personal {tipo}")
         driver.get(url)
-        driver.implicitly_wait(2)
-        
-        # Si en el futuro añadimos acciones iniciales (por ejemplo ir a "Subsidios y beneficios"),
-        # las ejecutaríamos aquí:
-        # _ejecutar_actions_iniciales(driver, modulo, org_code)
 
         
+        if not esperar_carga_municipio(driver,org_code, timeout=30):
+            resultados[tipo]=False
+            print("[INFO] ({org_code}) Fin de la fase tipo_personal '{tipo}' - FALLÓ (no cargo la pagina)")
+            continue
+        
+
         # Abrir el tipo de personal y guardar resultado
-        exito=_abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
+        exito=_abrir_tipo_personal(driver, modulo, org_code, tipo=tipo,timeout=25)
         resultados[tipo]=exito
 
         if exito:
@@ -109,7 +131,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
         print(f"   - Tipo de personal '{tipo}': {status}")
     return resultados
 
-def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 15):
+def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 25):
     """
     Abre la página del tipo de personal indicado (CONTRATA o PLANTA),
     utilizando los XPaths configurados en scraping_actions (por texto del enlace).
@@ -136,24 +158,36 @@ def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: st
 
     if not option:
         print(f"[WARN] No hay opción configurada para tipo_personal='{tipo}' en 'open_tipo_personal'.")
-        return
+        return False
 
     xpaths = option.get("xpaths") or []
     if not xpaths:
-        print(f"[WARN] La opción '{tipo}' no tiene xpaths definidos.")
-        return
+        print(f"[WARN] ({org_code}) La opción '{tipo}' no tiene xpaths definidos.")
+        return False
 
-    wait = WebDriverWait(driver, timeout)
+    
     print(f"[ACTION] {org_code} - Abriendo tipo de personal '{tipo}'")
 
     intentos_fallidos=[]
 
-    for i,xp in enumerate(xpaths,1):
-        try:
-            elemento = wait.until(EC.element_to_be_clickable((By.XPATH, xp)))
-            elemento.click()
+    ## DEBUG para poder ver si el texto esperado esta en el HTML que se recibio en el driver
+    page_text=driver.page_source
+    texto_busqueda=[
+        "Personal a Contrata",
+        "Personal a contrata",
+        "Personal de Planta",
+        "Personal de planta"
+    ]
+    print(f"[DEBUG] ({org_code}) Headless DOM contiene textos clave?")
+    for t in texto_busqueda:
+        print(f"          - '{t}':{t in page_text}")
 
-            # SI FUNCIONA - Mostrar resumen
+    for i,xp in enumerate(xpaths,1):
+
+        print(f"[DEBUG] ({org_code}) Intento #{i}: probando XPath {xp}")
+        exito=espera_click(driver,xp,timeout=timeout, scroll=True)
+
+        if exito:
             if intentos_fallidos:
                 print(f"[OK] {org_code} - tipo '{tipo}' abierto en intento #{i}")
                 print(f"XPath exitoso:{xp}")
@@ -161,14 +195,13 @@ def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: st
             else:
                 print(f"[OK] {org_code} - tipo '{tipo}' abierto en el primer intento")
                 print(f"XPath: {xp}")
-
             return True
-        
-        except (TimeoutException, NoSuchElementException) as e:
+        else:
             #Guardar el intento fallido
             intentos_fallidos.append(f"XPath {i}: {xp}")
             print(f"[INTENTO] {org_code} - XPath #{i} falló para tipo '{tipo}'")
-            
+    
+    # -- Si llega aquí, ninguno funcionó --       
     print(f"[ERROR] {org_code} No se pudo abrir el tipo de personal '{tipo}'")
     print(f"        Total de XPaths intentados: {len(xpaths)}")
     print("         XPaths probados:")
@@ -176,12 +209,27 @@ def _abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: st
         print(f"           - {xp_info}")
     return False
 
-def espera_click (driver,xpath, timeout=15):
+def espera_click (driver,xpath:str, timeout:int=10, scroll:bool=True)->bool:
     try:
-        elemento =WebDriverWait(driver, timeout).until(
-            EC.element_to_be_clickable((By.XPATH, xpath))
-        )
+        wait= WebDriverWait(driver, timeout)
+        elemento =wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
+
+        if scroll:
+            driver.execute_script(
+                "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});",
+                elemento,
+            )
+            time.sleep(0.5)  # Espera breve para que el scroll termine
+        
         elemento.click()
         return True
-    except:
+    except Exception as e:
+        print(f"[ERROR] No se pudo clickear el xpath: {xpath}.Error:{type(e).__name__}:{e}")
         return False
+    
+def _guardar_screenshot(driver,org_code:str, sufijo:str):
+    screenshots_dir= Path("screenshots")
+    screenshots_dir.mkdir(exist_ok=True)
+    filename=screenshots_dir /f"{org_code}_{sufijo}.png"
+    driver.save_screenshot(str(filename))
+    print(f"[DEBUG] Screenshot guardado: {filename}")
