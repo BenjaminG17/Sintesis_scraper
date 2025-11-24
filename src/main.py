@@ -1,7 +1,10 @@
-from .config import load_settings, load_actions, load_env
-from.selenium_driver import build_driver
-from .transparencia_workflow import procesar_municipio
+from src.utils.browser_helpers import build_driver
+from src.utils.navigation_helpers import procesar_municipio
+from src.utils.logging_helpers import setup_detailed_logger, log_resumen_terminal
+from src.utils.logging_helpers import log_detallado_municipio
+from src.config import load_settings, load_actions, load_env
 import time 
+
 
 def obtener_lista_municipios(settings: dict) -> list[str]:
     """
@@ -22,9 +25,10 @@ def obtener_lista_municipios(settings: dict) -> list[str]:
 def main():
     settings = load_settings()
     actions = load_actions()
-    env=load_env()
+    env = load_env()
+    orgs = obtener_lista_municipios(settings)
 
-    orgs= obtener_lista_municipios(settings)
+    logger_detallado = setup_detailed_logger()
 
     print("=== SETTINGS ===")
     print(f"base_url   : {settings.get('base_url')}")
@@ -46,8 +50,7 @@ def main():
     if modules:
         print(f"primer módulo id : {modules[0].get('id')}")
         print(f"url_pattern      : {modules[0].get('url_pattern')}")
-    
-    ## Aquí se realiza la prueba del driver
+
     print("\n=== DRIVER ===")
     print("Inicializando driver de Selenium...")
 
@@ -57,41 +60,55 @@ def main():
     )
     try:
         print("Driver inicializado correctamente.")
-
-        
         if not orgs:
             print("[WARN] No hay municipios configurados en settings.")
             return
+
+        tiempo_inicio = time.time()
+        n = 1
         
-
-        tiempo_inicio=time.time()
-        n=1
         for org in orgs:
-            
             print(f"\n=== PROCESANDO MUNICIPIO: {org} ===")
-            t_inicio_muni=time.time()
-            procesar_municipio(driver, org, settings, actions)  
+            t_inicio_muni = time.time()
+            resultados = procesar_municipio(driver, org, settings, actions)
+            t_final_muni = time.time()
+            duracion = t_final_muni - t_inicio_muni
 
-            t_final_muni=time.time()  
-            duracion=t_final_muni - t_inicio_muni
+            # Preparar resumen para ambos logs
+            tipos_personal_resumen = {}
+            detalle = resultados.get('detalle_por_tipo', {})
+            for tipo, datos in detalle.items():
+                tipos_personal_resumen[tipo] = {
+                    'personal': 'ÉXITO' if datos.get('tipo_personal_ok') else 'FALLÓ',
+                    'area': 'ÉXITO' if datos.get('area_municipal_ok') else 'FALLÓ',
+                    'año': 'ÉXITO' if datos.get('anio_ok') else 'FALLÓ',
+                    'xpath_tipo': datos.get('xpath_tipo'),
+                    'xpath_area': datos.get('xpath_area'),
+                    'xpath_anio': datos.get('xpath_anio'),
+                }
+            resumen_dict = {
+                'acceso_municipio_exitoso': resultados.get('acceso_municipio_exitoso'),
+                'tipo_municipio_detectado': resultados.get('tipo_municipio_detectado'),
+                'tipos_personal': tipos_personal_resumen
+            }
+
+            # Logging detallado y resumen
+            log_detallado_municipio(logger_detallado, org, duracion, resumen_dict)
+            log_resumen_terminal(org, resumen_dict)
 
             print(f"\n=== MUNICIPIO {org} PROCESADO ({n}/{len(orgs)}) ===")
             print(f"⏱️ Tiempo municipal: {duracion:.2f} segundos")
-            n+=1
+            n += 1
 
-        tiempo_final=time.time()
-        total=tiempo_final - tiempo_inicio
-
+        tiempo_final = time.time()
+        total = tiempo_final - tiempo_inicio
         horas = int(total // 3600)
         minutos = int((total % 3600) // 60)
         segundos = int(total % 60)
-
         print(
             f"\n[TIEMPO] Tiempo total de ejecución: "
             f"{horas:02d}:{minutos:02d}:{segundos:02d} (hh:mm:ss)"
         )
-        # ==========================================
-        
     finally:
         print("\nCerrando navegador...")
         driver.quit()

@@ -51,8 +51,14 @@
         },
         {
           "type": "select_anio",
-          "selector_button": "//button[contains(., 'Año')]",
-          "options_from_settings": true
+          "year_patterns": [
+            "//a[contains(normalize-space(.), 'Municipal {YEAR}')]",
+            "//a[contains(normalize-space(.), 'Año {YEAR}')]",
+            "//a[contains(normalize-space(.), 'AÑO {YEAR}')]",
+            "//a[normalize-space(.)='{YEAR}']",
+            "//a[contains(normalize-space(.), 'Municipalidad {YEAR}')]",   
+            "//*[contains(translate(text(), 'AÁÉÍÓÚÑ', 'AAEIOUN'), 'MUNICIPAL') and contains(text(), '{YEAR}')]"
+          ]
         },
         {
           "type": "select_mes",
