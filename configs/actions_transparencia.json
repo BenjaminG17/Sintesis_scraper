@@ -62,12 +62,14 @@
         },
         {
           "type": "select_mes",
-          "selector_button": "//button[contains(., 'Mes')]",
-          "options_from_settings": true
+          "month_patterns": [
+            "//a[contains(normalize-space(.), '{MONTH}')]",
+            "//a[normalize-space(.)='{MONTH}']"
+          ]
         },
         {
           "type": "download_csv",
-          "selector_button": "//button[contains(., 'CSV') or contains(., 'Descargar')]"
+          "xpath": ["//a[contains(normalize-space(.), 'Descargar CSV')]"]
         }
       ]
     }
