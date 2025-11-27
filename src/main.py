@@ -82,9 +82,12 @@ def main():
                     'personal': 'ÉXITO' if datos.get('tipo_personal_ok') else 'FALLÓ',
                     'area': 'ÉXITO' if datos.get('area_municipal_ok') else 'FALLÓ',
                     'año': 'ÉXITO' if datos.get('anio_ok') else 'FALLÓ',
+                    'meses': 'ÉXITO' if datos.get('meses_ok') else 'FALLÓ',
+                    
                     'xpath_tipo': datos.get('xpath_tipo'),
                     'xpath_area': datos.get('xpath_area'),
                     'xpath_anio': datos.get('xpath_anio'),
+                    'meses_detalle':datos.get('meses_detalle',{}),
                 }
             resumen_dict = {
                 'acceso_municipio_exitoso': resultados.get('acceso_municipio_exitoso'),

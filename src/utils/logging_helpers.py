@@ -22,9 +22,13 @@ def log_resumen_terminal(municipio_id, resultados):
         f"   - acceso_municipio_exitoso: {resultados['acceso_municipio_exitoso']}",
         f"   - tipo_municipio_detectado: {resultados['tipo_municipio_detectado']}"
     ]
-    for tipo_personal, estado in resultados['tipos_personal'].items():
+    #for tipo_personal, estado in resultados['tipos_personal'].items():
+    for tipo_personal, estado in resultados.get('tipos_personal', {}).items():
         resumen_lines.append(
-            f"   - Tipo de personal '{tipo_personal}': {estado['personal']} | Área MUNICIPAL: {estado['area']} | Año: {estado['año']}"
+            f"   - Tipo de personal '{tipo_personal}': {estado['personal']} | "
+            f"Área MUNICIPAL: {estado['area']} | "
+            f"Año: {estado['año']} | "
+            f"Meses: {estado['meses']}"
         )
     resumen_text = '\n'.join(resumen_lines)
     print(f"\n{resumen_text}")
@@ -45,4 +49,18 @@ def log_detallado_municipio(logger, municipio_id, duracion, resultados):
         logger.info(f"  - Personal: {estado['personal']} | XPath: {estado.get('xpath_tipo')}")
         logger.info(f"  - Área: {estado['area']} | XPath: {estado.get('xpath_area')}")
         logger.info(f"  - Año: {estado['año']} | XPath: {estado.get('xpath_anio')}")
+        logger.info(f"  - Meses : {estado.get('meses','N/A')} ")
+        logger.info("    Detalle por mes:")
+
+        for mes, info_mes in estado.get('meses_detalle', {}).items():
+            status = info_mes.get("status","N/A")
+            xpath_mes= info_mes.get("xpath_mes")
+            logger.info(f"      * {mes}: {status} | XPath: {xpath_mes}")
+        #meses_detalle = estado.get('meses_detalle', {})
+        #if meses_detalle:
+        #    logger.info("    Detalle por mes:")
+        #    for mes, info in meses_detalle.items():
+        #        ok_flag = "ÉXITO" if info.get("ok") else "FALLÓ"
+        #        xpath_mes = info.get("xpath_mes")
+        #        logger.info(f"      * {mes}: {ok_flag} | XPath: {xpath_mes}")
     logger.info("="*60 + "\n")

@@ -55,6 +55,8 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				"xpath_tipo": None,
 				"xpath_area": None,
 				"xpath_anio": None,
+				"meses_ok":False,
+				"meses_detalle":{},
 			}
 			print(f"[INFO] ({org_code}) Fin de la fase tipo_personal '{tipo}' - FALLÓ (no cargó la página)")
 			continue
@@ -70,6 +72,8 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				"xpath_tipo": None,
 				"xpath_area": None,
 				"xpath_anio": None,
+				"meses_ok":False,
+				"meses_detalle":{},
 			}
 			continue
 
@@ -99,11 +103,17 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 		exito_anio, xpath_anio = seleccionar_anio(driver, modulo, org_code, year=start_year)
 
 		meses = settings.get("months", [])
+		meses_detalle={}
+		mes_ok=False
+
 		if exito_anio and meses:
+			meses_detalle={}
+			mes_ok=False
+
 			for mes in meses:
 	    		# Recargar municipio y repetir selección antes de cada mes
-				print(f"[INFO] ({org_code}) Recargando municipio y seleccionando tipo, área y año antes de mes '{mes}'")
-				logger.info(f"({org_code}) Recargando municipio y seleccionando tipo, área y año antes de mes '{mes}'")
+				print(f"[INFO] ({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
+				logger.info(f"({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
 				driver.get(url)
 				
 				#Se espera que cargue completamente el municipio, si no se pudo aparece un log 
@@ -111,6 +121,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				if not esperar_carga_municipio(driver, org_code):
 					print(f"[WARN] ({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
 					logger.warning(f"({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
+					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
 					continue
 				
 				#Abrir el tipo de personal, si no existe aparece un log indicando que no se pudo abrir
@@ -118,6 +129,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				if not exito_tipo:
 					print(f"[WARN] ({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
 					logger.warning(f"({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
+					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
 					continue
 				
 				# Se comprueba si este municipio tiene un panel de selección de área
@@ -138,6 +150,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				if not exito_anio:
 					print(f"[WARN] ({org_code}) No se pudo seleccionar año '{start_year}' antes de mes '{mes}'")
 					logger.warning(f"({org_code}) No se pudo seleccionar año '{start_year}' antes de mes '{mes}'")
+					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
 					continue
 				
 				#Seleccionamos el mes, sino se responde entregando un log
@@ -147,10 +160,13 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				if not exito_mes:
 					print(f"[WARN] ({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}. Se continúa con el siguiente mes.")
 					logger.warning(f"({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}.")
+					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
 					continue
 				
 				print(f"[OK] ({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
 				logger.info(f"({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
+				meses_detalle[mes]={"status":"ÉXITO", "xpath_mes":xpath_mes}
+				mes_ok=True
 				time.sleep(3)
 				# Si el mes se seleccionó, intentamos descarga CSV
 				#exito_csv, xpath_csv = descargar_csv(driver, modulo, org_code)
@@ -160,7 +176,10 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 					# Aquí después podrás meter lógica para esperar la descarga, mover archivo, etc.
 				#else:
 					#print(f"[WARN] ({org_code}) No se pudo disparar descarga CSV para {tipo} - {start_year} - {mes}")
-
+		else:
+			for mes in meses:
+				meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
+				
 		resultados[tipo] = {
 			"tipo_personal_ok": True,
 			"area_municipal_ok": bool(exito_area),
@@ -168,6 +187,8 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 			"xpath_tipo": xpath_tipo,
 			"xpath_area": xpath_area,
 			"xpath_anio": xpath_anio,
+			"meses_ok":mes_ok,
+			"meses_detalle": meses_detalle
 		}
 	if any(r.get("area_municipal_ok") for r in resultados.values()):
 		tipo_municipio_detectado = "con_area_municipal"
@@ -184,11 +205,13 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 		status_tipo = "ÉXITO" if datos["tipo_personal_ok"] else "FALLÓ"
 		status_area = "ÉXITO" if datos["area_municipal_ok"] else "FALLÓ"
 		status_anio = "EXITO" if datos["anio_ok"] else "FALLÓ"
+		status_mes = "ÉXITO" if datos.get("meses_ok") else "FALLÓ"
 		extra = " (skip_por_contrata)" if datos.get("skip_por_contrata") else ""
 		print(
 			f"   - Tipo de personal '{tipo}': {status_tipo}{extra} | "
 			f"Área MUNICIPAL: {status_area} | "
-			f"Año: {status_anio}"
+			f"Año: {status_anio} | "
+			f"Meses: {status_mes}"
 		)
 	return {
 		"acceso_municipio_exitoso": acceso_municipio_exitoso,
@@ -328,57 +351,70 @@ def seleccionar_anio(driver, modulo: Dict[str, Any], org_code: str, year: int, t
 	return False, None
 
 def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, timeout: int = 5):
-    """
-    Selecciona el MES indicado (por ejemplo 'Enero'),
-    usando el bloque 'select_mes' de scraping_actions en actions_transparencia.json.
+	"""
+	Selecciona el MES indicado (por ejemplo 'Enero'),
+	usando el bloque 'select_mes' de scraping_actions en actions_transparencia.json.
 
-    Usa patrones con placeholder {MONTH} definidos en el JSON.
-    Devuelve (True, xpath_usado) si tuvo éxito, (False, None) si no.
-    """
-    scraping_actions = modulo.get("scraping_actions", [])
-    config_mes = None
+	Usa patrones con placeholders:
+	  - {MONTH}         -> tal como viene de settings.json (ej: 'Diciembre')
+	  - {MONTH_LOWER}   -> en minúsculas (ej: 'diciembre')
+	  - {MONTH_PARTIAL} -> abreviado (primeros 4 chars, ej: 'dici')
 
-    # Buscar la acción tipo 'select_mes'
-    for sa in scraping_actions:
-        if sa.get("type") == "select_mes":
-            config_mes = sa
-            break
+	Devuelve (True, xpath_usado) si tuvo éxito, (False, None) si no.
+	"""
+	scraping_actions = modulo.get("scraping_actions", [])
+	config_mes = None
 
-    if not config_mes:
-        print(f"[WARN] ({org_code}) No se encontró configuración 'select_mes' en scraping_actions.")
-        return False, None
+	# Buscar la acción tipo 'select_mes'
+	for sa in scraping_actions:
+		if sa.get("type") == "select_mes":
+			config_mes = sa
+			break
 
-    patterns = config_mes.get("month_patterns", [])
-    if not patterns:
-        print(f"[WARN] ({org_code}) 'select_mes' no tiene 'month_patterns' definidos.")
-        return False, None
+	if not config_mes:
+		print(f"[WARN] ({org_code}) No se encontró configuración 'select_mes' en scraping_actions.")
+		return False, None
 
-    month_str = str(month)
-    xpaths = [pat.replace("{MONTH}", month_str) for pat in patterns]
+	patterns = config_mes.get("month_patterns", [])
+	if not patterns:
+		print(f"[WARN] ({org_code}) 'select_mes' no tiene 'month_patterns' definidos.")
+		return False, None
 
-    print(f"[ACTION] {org_code} - Seleccionando mes '{month_str}'")
-    intentos_fallidos = []
+	# Normalizaciones
+	month_str = str(month)                 # 'Diciembre'
+	month_lower = month_str.lower()        # 'diciembre'
+	month_partial = month_lower[:4]        # 'dici'
 
-    for i, xp in enumerate(xpaths, 1):
-        print(f"[DEBUG] ({org_code}) Mes {month_str} - Intento #{i}: probando XPath {xp}")
-        exito = espera_click(driver, xp, timeout=timeout, scroll=True)
+	xpaths = []
+	for pat in patterns:
+		xp = (pat.replace("{MONTH}", month_str)
+				.replace("{MONTH_LOWER}", month_lower)
+				.replace("{MONTH_PARTIAL}", month_partial))
+		xpaths.append(xp)
 
-        if exito:
-            if intentos_fallidos:
-                print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado en el intento #{i}")
-                print(f"     XPath exitoso: {xp}")
-                print(f"     Intentos fallidos previos: {len(intentos_fallidos)}")
-            else:
-                print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado en el primer intento")
-                print(f"     XPath: {xp}")
-            return True, xp
-        else:
-            intentos_fallidos.append(f"XPath #{i}: {xp}")
-            print(f"[INTENTO] {org_code} - XPath #{i} falló para mes '{month_str}'")
+	print(f"[ACTION] {org_code} - Seleccionando mes '{month_str}'")
+	intentos_fallidos = []
 
-    print(f"[ERROR] ({org_code}) No se pudo seleccionar el mes '{month_str}'")
-    print(f"        Total de XPaths intentados: {len(xpaths)}")
-    for xp_info in intentos_fallidos:
-        print(f"           - {xp_info}")
+	for i, xp in enumerate(xpaths, 1):
+		print(f"[DEBUG] ({org_code}) Mes {month_str} - Intento #{i}: probando XPath {xp}")
+		exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 
-    return False, None
+		if exito:
+			if intentos_fallidos:
+				print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado en el intento #{i}")
+				print(f"     XPath exitoso: {xp}")
+				print(f"     Intentos fallidos previos: {len(intentos_fallidos)}")
+			else:
+				print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado en el primer intento")
+				print(f"     XPath: {xp}")
+			return True, xp
+		else:
+			intentos_fallidos.append(f"XPath #{i}: {xp}")
+			print(f"[INTENTO] {org_code} - XPath #{i} falló para mes '{month_str}'")
+
+	print(f"[ERROR] ({org_code}) No se pudo seleccionar el mes '{month_str}'")
+	print(f"        Total de XPaths intentados: {len(xpaths)}")
+	for xp_info in intentos_fallidos:
+		print(f"           - {xp_info}")
+
+	return False, None

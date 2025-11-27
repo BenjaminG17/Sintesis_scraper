@@ -63,8 +63,11 @@
         {
           "type": "select_mes",
           "month_patterns": [
+            
+            "//a[normalize-space(.)='{MONTH}']",
             "//a[contains(normalize-space(.), '{MONTH}')]",
-            "//a[normalize-space(.)='{MONTH}']"
+            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}')]",
+            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_PARTIAL}')]"
           ]
         },
         {
