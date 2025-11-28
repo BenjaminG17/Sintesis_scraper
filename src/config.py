@@ -15,7 +15,6 @@ def load_settings() -> dict:
     with settings_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def load_actions() -> dict:
     """
     Lee configs/actions_transparencia.json y devuelve la configuración de módulos/acciones.

@@ -28,7 +28,8 @@ def log_resumen_terminal(municipio_id, resultados):
             f"   - Tipo de personal '{tipo_personal}': {estado['personal']} | "
             f"Área MUNICIPAL: {estado['area']} | "
             f"Año: {estado['año']} | "
-            f"Meses: {estado['meses']}"
+            f"Meses: {estado['meses']} | "
+            f"CSV: {estado['CSV']}"
         )
     resumen_text = '\n'.join(resumen_lines)
     print(f"\n{resumen_text}")
@@ -53,9 +54,13 @@ def log_detallado_municipio(logger, municipio_id, duracion, resultados):
         logger.info("    Detalle por mes:")
 
         for mes, info_mes in estado.get('meses_detalle', {}).items():
-            status = info_mes.get("status","N/A")
-            xpath_mes= info_mes.get("xpath_mes")
-            logger.info(f"      * {mes}: {status} | XPath: {xpath_mes}")
+            status = info_mes.get('status', 'N/A')
+            xpath_mes= info_mes.get('xpath_mes')
+            csv_status=info_mes.get('csv_status','N/A')
+            csv_path = info_mes.get('csv_path')
+            logger.info(f"      * {mes}: {status} | XPath: {xpath_mes} "
+                        f"| Descargar CSV: {csv_status} "
+                        f"| Xpath CSV: {info_mes.get('xpath_csv',None)}")
         #meses_detalle = estado.get('meses_detalle', {})
         #if meses_detalle:
         #    logger.info("    Detalle por mes:")

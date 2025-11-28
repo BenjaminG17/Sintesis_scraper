@@ -2,8 +2,8 @@ from typing import Dict, Any
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from .browser_helpers import _guardar_screenshot
-from .browser_helpers import espera_click
+from src.config import load_env
+from .browser_helpers import esperar_y_mover_csv,espera_click,_guardar_screenshot
 from .logging_helpers import setup_detailed_logger
 import time
 
@@ -28,6 +28,8 @@ def esperar_carga_municipio(driver, org_code: str, timeout: int = 20):
 		return False
 
 def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_cfg: Dict[str, Any]):
+	env=load_env()
+	download_root=env["DOWNLOAD_ROOT"]
 	logger = setup_detailed_logger()
 	modulo = _obtener_modulo_generico(actions_cfg)
 	url_pattern = modulo.get("url_pattern")
@@ -167,15 +169,42 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 				logger.info(f"({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
 				meses_detalle[mes]={"status":"ÉXITO", "xpath_mes":xpath_mes}
 				mes_ok=True
-				time.sleep(3)
+
 				# Si el mes se seleccionó, intentamos descarga CSV
-				#exito_csv, xpath_csv = descargar_csv(driver, modulo, org_code)
-				#if exito_csv:
-					#algun_mes_ok = True
-					#print(f"[OK] ({org_code}) Descarga CSV disparada para {tipo} - {start_year} - {mes}")
-					# Aquí después podrás meter lógica para esperar la descarga, mover archivo, etc.
-				#else:
-					#print(f"[WARN] ({org_code}) No se pudo disparar descarga CSV para {tipo} - {start_year} - {mes}")
+				# Disparar la descarga del CSV
+				exito_csv,xpath_csv=descargar_csv(driver, modulo, org_code)
+				if exito_csv:
+					print(f"[OK] ({org_code}) Descarga CSV disparada para tipo {tipo}, año {start_year}, mes '{mes}'.")
+					logger.info(f"({org_code}) Descarga CSV disparada para tipo {tipo}, año {start_year}, mes '{mes}'.")
+
+					# Esperar a que el archivo se descargue y moverlo/renombrarlo
+					ruta_csv = esperar_y_mover_csv(
+					download_root=download_root,   # viene de env["DOWNLOAD_ROOT"]
+					municipio=org_code,
+					tipo_personal=tipo,
+					year=start_year,
+					mes=mes,
+					)
+
+					if ruta_csv:
+						meses_detalle[mes]["csv_status"] = "ÉXITO"
+						meses_detalle[mes]["xpath_csv"] = xpath_csv
+						meses_detalle[mes]["csv_path"] = ruta_csv
+						print(f"[OK] ({org_code}) CSV movido a: {ruta_csv}")
+						logger.info(f"({org_code}) CSV movido a: {ruta_csv}")
+					else:
+						meses_detalle[mes]["csv_status"] = "FALLÓ"
+						meses_detalle[mes]["xpath_csv"] = xpath_csv
+						meses_detalle[mes]["csv_path"] = None
+						print(f"[WARN] ({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
+						logger.warning(f"({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
+				else:
+					print(f"[WARN] ({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
+					logger.warning(f"({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
+					meses_detalle[mes]["csv_status"] = "FALLÓ"
+					meses_detalle[mes]["xpath_csv"] = None
+					meses_detalle[mes]["csv_path"]=None
+				time.sleep(3)
 		else:
 			for mes in meses:
 				meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
@@ -418,3 +447,60 @@ def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, t
 		print(f"           - {xp_info}")
 
 	return False, None
+
+def descargar_csv(driver, modulo: Dict[str, Any], org_code: str, timeout: int =5):
+    """
+    Hace click en el botón/enlace de descarga CSV usando la configuración
+    'download_csv' de scraping_actions en actions_transparencia.json.
+
+    Devuelve (True, xpath_usado) si tuvo éxito, (False, None) si no.
+    """
+    scraping_actions = modulo.get("scraping_actions", [])
+    config_csv = None
+
+    # Buscar la acción tipo 'download_csv'
+    for sa in scraping_actions:
+        if sa.get("type") == "download_csv":
+            config_csv = sa
+            break
+
+    if not config_csv:
+        print(f"[WARN] ({org_code}) No se encontró configuración 'download_csv' en scraping_actions.")
+        return False, None
+
+    xpaths = config_csv.get("xpaths", [])
+    selector_button = config_csv.get("selector_button")
+    if selector_button:
+        # Por compatibilidad, si aún usas selector_button
+        xpaths.append(selector_button)
+
+    if not xpaths:
+        print(f"[WARN] ({org_code}) 'download_csv' no tiene XPaths definidos.")
+        return False, None
+
+    print(f"[ACTION] {org_code} - Intentando disparar descarga CSV")
+    intentos_fallidos = []
+
+    for i, xp in enumerate(xpaths, 1):
+        print(f"[DEBUG] ({org_code}) CSV - Intento #{i}: probando XPath {xp}")
+        exito = espera_click(driver, xp, timeout=timeout, scroll=True)
+
+        if exito:
+            if intentos_fallidos:
+                print(f"[OK] ({org_code}) CSV disparado en el intento #{i}")
+                print(f"     XPath exitoso: {xp}")
+                print(f"     Intentos fallidos previos: {len(intentos_fallidos)}")
+            else:
+                print(f"[OK] ({org_code}) CSV disparado en el primer intento")
+                print(f"     XPath: {xp}")
+            return True, xp
+        else:
+            intentos_fallidos.append(f"XPath #{i}: {xp}")
+            print(f"[INTENTO] {org_code} - XPath #{i} falló para descarga CSV")
+
+    print(f"[ERROR] ({org_code}) No se pudo disparar la descarga CSV")
+    print(f"        Total de XPaths intentados: {len(xpaths)}")
+    for xp_info in intentos_fallidos:
+        print(f"           - {xp_info}")
+
+    return False, None

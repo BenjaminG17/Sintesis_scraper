@@ -78,16 +78,23 @@ def main():
             tipos_personal_resumen = {}
             detalle = resultados.get('detalle_por_tipo', {})
             for tipo, datos in detalle.items():
+                meses_detalle = datos.get('meses_detalle', {}) or {}
+                # ¿Al menos un mes con CSV OK?
+                algun_csv_ok = any(
+                    (info.get("csv_status") == "ÉXITO")
+                    for info in meses_detalle.values()
+                )
+                csv_resumen = "ÉXITO" if algun_csv_ok else "FALLÓ"
                 tipos_personal_resumen[tipo] = {
                     'personal': 'ÉXITO' if datos.get('tipo_personal_ok') else 'FALLÓ',
                     'area': 'ÉXITO' if datos.get('area_municipal_ok') else 'FALLÓ',
                     'año': 'ÉXITO' if datos.get('anio_ok') else 'FALLÓ',
                     'meses': 'ÉXITO' if datos.get('meses_ok') else 'FALLÓ',
-                    
+                    'CSV': csv_resumen,
                     'xpath_tipo': datos.get('xpath_tipo'),
                     'xpath_area': datos.get('xpath_area'),
                     'xpath_anio': datos.get('xpath_anio'),
-                    'meses_detalle':datos.get('meses_detalle',{}),
+                    'meses_detalle': meses_detalle,
                 }
             resumen_dict = {
                 'acceso_municipio_exitoso': resultados.get('acceso_municipio_exitoso'),

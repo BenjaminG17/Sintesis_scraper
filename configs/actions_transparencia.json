@@ -72,7 +72,10 @@
         },
         {
           "type": "download_csv",
-          "xpath": ["//a[contains(normalize-space(.), 'Descargar CSV')]"]
+          "xpaths": [
+            "//button[contains(normalize-space(.), 'Descargar CSV')]",          
+            "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ', 'abcdefghijklmnopqrstuvwxyzáéíóúüñ'), 'descargar csv')]"
+          ]
         }
       ]
     }
