@@ -38,187 +38,179 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 	url = url_pattern.format(org=org_code)
 	tipos_personal = ["CONTRATA", "PLANTA"]
 	start_year = settings.get("start_year")
+	end_year = settings.get("end_year", start_year)
 	resultados: Dict[str, Dict[str, Any]] = {}
 	acceso_municipio_exitoso = False
+
 
 	# Memoria de estado de área por municipio
 	if not hasattr(procesar_municipio, "estado_areas"):
 		procesar_municipio.estado_areas = {}
 	estado_areas = procesar_municipio.estado_areas
 
-	for tipo in tipos_personal:
-		print(f"\n[INFO] ({org_code}) - Procesando tipo de personal: {tipo}")
-		driver.get(url)
-		if not esperar_carga_municipio(driver, org_code):
-			resultados[tipo] = {
-				"tipo_personal_ok": False,
-				"area_municipal_ok": False,
-				"anio_ok": False,
-				"xpath_tipo": None,
-				"xpath_area": None,
-				"xpath_anio": None,
-				"meses_ok":False,
-				"meses_detalle":{},
-			}
-			print(f"[INFO] ({org_code}) Fin de la fase tipo_personal '{tipo}' - FALLÓ (no cargó la página)")
-			continue
-		acceso_municipio_exitoso = True
-		print(f"[PASO 1] ({org_code}) Abriendo tipo de personal: {tipo}")
-		exito_tipo, xpath_tipo = abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
-		if not exito_tipo:
-			print(f"[INFO] ({org_code}) Fin de fase tipo_personal '{tipo}' - FALLÓ (no se abrió)")
-			resultados[tipo] = {
-				"tipo_personal_ok": False,
-				"area_municipal_ok": False,
-				"anio_ok": False,
-				"xpath_tipo": None,
-				"xpath_area": None,
-				"xpath_anio": None,
-				"meses_ok":False,
-				"meses_detalle":{},
-			}
-			continue
+	# Sistema de caché inteligente de XPaths (solo para acelerar búsqueda dentro de cada función)
+	if not hasattr(procesar_municipio, "xpath_cache"):
+		procesar_municipio.xpath_cache = {}
+	xpath_cache = procesar_municipio.xpath_cache
 
-		# Lógica de memoria de área
-		municipio_tiene_area = estado_areas.get(org_code, None)
-		exito_area, xpath_area = None, None
-		if municipio_tiene_area is None:
-			print(f"[PASO 2] ({org_code}) Intentando seleccionar área MUNICIPAL para tipo: {tipo}")
-			exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL")
-			
-			#Si no se pudo seleccionar el área de manera correcta, se entrega un aviso
-			if not exito_area:
-				print(f"[WARN] ({org_code}) No se pudo seleccionar área MUNICIPAL. Se memoriza como SIN_AREA y se avanza a años.")
-				estado_areas[org_code] = False
+	resultados = {}
+	for year in range(start_year, end_year + 1):
+		for tipo in tipos_personal:
+			print(f"\n[INFO] ({org_code}) - Procesando tipo de personal: {tipo} para año: {year}")
+			if tipo not in resultados:
+				resultados[tipo] = {}
+			driver.get(url)
+			if not esperar_carga_municipio(driver, org_code):
+				resultados[tipo][year] = {
+					"tipo_personal_ok": False,
+					"area_municipal_ok": False,
+					"anio_ok": False,
+					"xpath_tipo": None,
+					"xpath_area": None,
+					"xpath_anio": None,
+					"meses_ok":False,
+					"meses_detalle":{},
+				}
+				print(f"[INFO] ({org_code}) Fin de la fase tipo_personal '{tipo}' - FALLÓ (no cargó la página)")
+				continue
+			acceso_municipio_exitoso = True
+
+			# Abrir tipo de personal SIEMPRE tras recargar
+			exito_tipo, xpath_tipo = abrir_tipo_personal(driver, modulo, org_code, tipo=tipo, xpath_cache=xpath_cache)
+			if not exito_tipo:
+				print(f"[INFO] ({org_code}) Fin de fase tipo_personal '{tipo}' - FALLÓ (no se abrió)")
+				resultados[tipo][year] = {
+					"tipo_personal_ok": False,
+					"area_municipal_ok": False,
+					"anio_ok": False,
+					"xpath_tipo": None,
+					"xpath_area": None,
+					"xpath_anio": None,
+					"meses_ok":False,
+					"meses_detalle":{},
+				}
+				continue
+
+			municipio_tiene_area = estado_areas.get(org_code, None)
+			exito_area, xpath_area = None, None
+			if municipio_tiene_area is None:
+				print(f"[PASO 2] ({org_code}) Intentando seleccionar área MUNICIPAL para tipo: {tipo}")
+				exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL", xpath_cache=xpath_cache)
+				if not exito_area:
+					print(f"[WARN] ({org_code}) No se pudo seleccionar área MUNICIPAL. Se memoriza como SIN_AREA y se avanza a años.")
+					estado_areas[org_code] = False
+				else:
+					estado_areas[org_code] = True
+			elif municipio_tiene_area is False:
+				print(f"[INFO] ({org_code}) Municipio ya detectado SIN área MUNICIPAL. Saltando a selección de año.")
 			else:
-				estado_areas[org_code] = True
+				print(f"[PASO 2] ({org_code}) Seleccionando área MUNICIPAL para tipo: {tipo} (ya detectado CON área)")
+				exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL", xpath_cache=xpath_cache)
 
-		# Se identifica que el municipio no tiene un panel de selección de área , por lo que
-		# se pasa al siguiente paso, el cuál es la navegación hacia los años		
-		elif municipio_tiene_area is False:
-			print(f"[INFO] ({org_code}) Municipio ya detectado SIN área MUNICIPAL. Saltando a selección de año.")
-		else:
-			print(f"[PASO 2] ({org_code}) Seleccionando área MUNICIPAL para tipo: {tipo} (ya detectado CON área)")
-			exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL")
+			print(f"[PASO 3] ({org_code}) Seleccionando año {year} para tipo: {tipo}")
+			exito_anio, xpath_anio = seleccionar_anio(driver, modulo, org_code, year=year, xpath_cache=xpath_cache)
 
-		print(f"[PASO 3] ({org_code}) Seleccionando año {start_year} para tipo: {tipo}")
-		exito_anio, xpath_anio = seleccionar_anio(driver, modulo, org_code, year=start_year)
-
-		meses = settings.get("months", [])
-		meses_detalle={}
-		mes_ok=False
-
-		if exito_anio and meses:
+			meses = settings.get("months", [])
 			meses_detalle={}
 			mes_ok=False
 
-			for mes in meses:
-	    		# Recargar municipio y repetir selección antes de cada mes
-				print(f"[INFO] ({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
-				logger.info(f"({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
-				driver.get(url)
-				
-				#Se espera que cargue completamente el municipio, si no se pudo aparece un log 
-				# indicando que no se cargo completamente el municipio
-				if not esperar_carga_municipio(driver, org_code):
-					print(f"[WARN] ({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
-					logger.warning(f"({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
-					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
-					continue
-				
-				#Abrir el tipo de personal, si no existe aparece un log indicando que no se pudo abrir
-				exito_tipo, xpath_tipo = abrir_tipo_personal(driver, modulo, org_code, tipo=tipo)
-				if not exito_tipo:
-					print(f"[WARN] ({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
-					logger.warning(f"({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
-					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
-					continue
-				
-				# Se comprueba si este municipio tiene un panel de selección de área
-				municipio_tiene_area = estado_areas.get(org_code, None)
-				exito_area, xpath_area = None, None
+			if exito_anio and meses:
+				meses_detalle={}
+				mes_ok=False
 
-				# Si el municipio es None, significa que es un estado desconocido, por lo que se ejecuta
-				if municipio_tiene_area is None:
-					exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL")
-					if not exito_area: # Si no se encuentra la selección de área, se le da el valor de FALSO
-						estado_areas[org_code] = False
-				elif municipio_tiene_area is True:
-					exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL")
-				
-				# Si no tiene área, saltar directo a año
-				exito_anio, xpath_anio = seleccionar_anio(driver, modulo, org_code, year=start_year)
+				for mes in meses:
+					print(f"[INFO] ({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
+					logger.info(f"({org_code}) Recargando municipio y seleccionando tipo, área y año del mes '{mes}'")
+					driver.get(url)
 
-				if not exito_anio:
-					print(f"[WARN] ({org_code}) No se pudo seleccionar año '{start_year}' antes de mes '{mes}'")
-					logger.warning(f"({org_code}) No se pudo seleccionar año '{start_year}' antes de mes '{mes}'")
-					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
-					continue
-				
-				#Seleccionamos el mes, sino se responde entregando un log
-				print(f"[PASO 4] ({org_code}) Seleccionando mes '{mes}' para tipo {tipo}, año {start_year}")
-				exito_mes, xpath_mes = seleccionar_mes(driver, modulo, org_code, month=mes)
+					if not esperar_carga_municipio(driver, org_code):
+						print(f"[WARN] ({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
+						logger.warning(f"({org_code}) No se pudo recargar el municipio antes de mes '{mes}'")
+						meses_detalle[mes] ={"status":"FALLÓ", "xpath_mes":None}
+						continue
 
-				if not exito_mes:
-					print(f"[WARN] ({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}. Se continúa con el siguiente mes.")
-					logger.warning(f"({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}.")
-					meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
-					continue
-				
-				print(f"[OK] ({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
-				logger.info(f"({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
-				meses_detalle[mes]={"status":"ÉXITO", "xpath_mes":xpath_mes}
-				mes_ok=True
+					exito_tipo, xpath_tipo = abrir_tipo_personal(driver, modulo, org_code, tipo=tipo, xpath_cache=xpath_cache)
+					if not exito_tipo:
+						print(f"[WARN] ({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
+						logger.warning(f"({org_code}) No se pudo reabrir tipo de personal '{tipo}' antes de mes '{mes}'")
+						meses_detalle[mes] ={"status":"FALLÓ", "xpath_mes":None}
+						continue
 
-				# Si el mes se seleccionó, intentamos descarga CSV
-				# Disparar la descarga del CSV
-				exito_csv,xpath_csv=descargar_csv(driver, modulo, org_code)
-				if exito_csv:
-					print(f"[OK] ({org_code}) Descarga CSV disparada para tipo {tipo}, año {start_year}, mes '{mes}'.")
-					logger.info(f"({org_code}) Descarga CSV disparada para tipo {tipo}, año {start_year}, mes '{mes}'.")
+					municipio_tiene_area = estado_areas.get(org_code, None)
+					exito_area, xpath_area = None, None
+					if municipio_tiene_area is None:
+						exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL", xpath_cache=xpath_cache)
+						if not exito_area:
+							estado_areas[org_code] = False
+					elif municipio_tiene_area is True:
+						exito_area, xpath_area = seleccionar_area(driver, modulo, org_code, area_value="MUNICIPAL", xpath_cache=xpath_cache)
 
-					# Esperar a que el archivo se descargue y moverlo/renombrarlo
-					ruta_csv = esperar_y_mover_csv(
-					download_root=download_root,   # viene de env["DOWNLOAD_ROOT"]
-					municipio=org_code,
-					tipo_personal=tipo,
-					year=start_year,
-					mes=mes,
-					)
+					exito_anio, xpath_anio = seleccionar_anio(driver, modulo, org_code, year=year, xpath_cache=xpath_cache)
+					if not exito_anio:
+						print(f"[WARN] ({org_code}) No se pudo seleccionar año '{year}' antes de mes '{mes}'")
+						logger.warning(f"({org_code}) No se pudo seleccionar año '{year}' antes de mes '{mes}'")
+						meses_detalle[mes] ={"status":"FALLÓ", "xpath_mes":None}
+						continue
 
-					if ruta_csv:
-						meses_detalle[mes]["csv_status"] = "ÉXITO"
-						meses_detalle[mes]["xpath_csv"] = xpath_csv
-						meses_detalle[mes]["csv_path"] = ruta_csv
-						print(f"[OK] ({org_code}) CSV movido a: {ruta_csv}")
-						logger.info(f"({org_code}) CSV movido a: {ruta_csv}")
+					print(f"[PASO 4] ({org_code}) Seleccionando mes '{mes}' para tipo {tipo}, año {year}")
+					exito_mes, xpath_mes = seleccionar_mes(driver, modulo, org_code, month=mes, xpath_cache=xpath_cache)
+					if not exito_mes:
+						print(f"[WARN] ({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}. Se continúa con el siguiente mes.")
+						logger.warning(f"({org_code}) No se pudo seleccionar el mes '{mes}' para tipo {tipo}.")
+						meses_detalle[mes] ={"status":"FALLÓ", "xpath_mes":None}
+						continue
+
+					print(f"[OK] ({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
+					logger.info(f"({org_code}) Mes '{mes}' seleccionado correctamente para tipo {tipo}.")
+					meses_detalle[mes] ={"status":"ÉXITO", "xpath_mes":xpath_mes}
+					mes_ok=True
+
+					exito_csv, xpath_csv = descargar_csv(driver, modulo, org_code, xpath_cache=xpath_cache)
+					if exito_csv:
+						print(f"[OK] ({org_code}) Descarga CSV disparada para tipo {tipo}, año {year}, mes '{mes}'.")
+						logger.info(f"({org_code}) Descarga CSV disparada para tipo {tipo}, año {year}, mes '{mes}'.")
+
+						ruta_csv = esperar_y_mover_csv(
+							download_root=download_root,
+							municipio=org_code,
+							tipo_personal=tipo,
+							year=year,
+							mes=mes,
+						)
+
+						if ruta_csv:
+							meses_detalle[mes]["csv_status"] = "ÉXITO"
+							meses_detalle[mes]["xpath_csv"] = xpath_csv
+							meses_detalle[mes]["csv_path"] = ruta_csv
+							print(f"[OK] ({org_code}) CSV movido a: {ruta_csv}")
+							logger.info(f"({org_code}) CSV movido a: {ruta_csv}")
+						else:
+							meses_detalle[mes]["csv_status"] = "FALLÓ"
+							meses_detalle[mes]["xpath_csv"] = xpath_csv
+							meses_detalle[mes]["csv_path"] = None
+							print(f"[WARN] ({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {year}, mes '{mes}'.")
+							logger.warning(f"({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {year}, mes '{mes}'.")
 					else:
+						print(f"[WARN] ({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {year}, mes '{mes}'.")
+						logger.warning(f"({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {year}, mes '{mes}'.")
 						meses_detalle[mes]["csv_status"] = "FALLÓ"
-						meses_detalle[mes]["xpath_csv"] = xpath_csv
-						meses_detalle[mes]["csv_path"] = None
-						print(f"[WARN] ({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
-						logger.warning(f"({org_code}) No se pudo mover/renombrar el CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
-				else:
-					print(f"[WARN] ({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
-					logger.warning(f"({org_code}) No se pudo disparar descarga CSV para tipo {tipo}, año {start_year}, mes '{mes}'.")
-					meses_detalle[mes]["csv_status"] = "FALLÓ"
-					meses_detalle[mes]["xpath_csv"] = None
-					meses_detalle[mes]["csv_path"]=None
-				time.sleep(3)
-		else:
-			for mes in meses:
-				meses_detalle[mes]={"status":"FALLÓ", "xpath_mes":None}
-				
-		resultados[tipo] = {
-			"tipo_personal_ok": True,
-			"area_municipal_ok": bool(exito_area),
-			"anio_ok": bool(exito_anio),
-			"xpath_tipo": xpath_tipo,
-			"xpath_area": xpath_area,
-			"xpath_anio": xpath_anio,
-			"meses_ok":mes_ok,
-			"meses_detalle": meses_detalle
-		}
+						meses_detalle[mes]["xpath_csv"] = None
+						meses_detalle[mes]["csv_path"] =None
+					time.sleep(3)
+			else:
+				for mes in meses:
+					meses_detalle[mes] ={"status":"FALLÓ", "xpath_mes":None}
+
+			resultados[tipo][year] = {
+				"tipo_personal_ok": True,
+				"area_municipal_ok": bool(exito_area),
+				"anio_ok": bool(exito_anio),
+				"xpath_tipo": xpath_tipo,
+				"xpath_area": xpath_area,
+				"xpath_anio": xpath_anio,
+				"meses_ok":mes_ok,
+				"meses_detalle": meses_detalle
+			}
 	if any(r.get("area_municipal_ok") for r in resultados.values()):
 		tipo_municipio_detectado = "con_area_municipal"
 	else:
@@ -248,7 +240,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any], actions_
 		"detalle_por_tipo": resultados,
 	}
 
-def abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 20):
+def abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str, timeout: int = 10, xpath_cache=None):
 	scraping_actions = modulo.get("scraping_actions", [])
 	config_tipo = None
 	for sa in scraping_actions:
@@ -272,11 +264,22 @@ def abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str
 		return False
 	print(f"[ACTION] {org_code} - Abriendo tipo de personal '{tipo}'")
 	
+	# Usar caché para acelerar búsqueda
+	cache_key = (org_code, tipo, "tipo")
 	intentos_fallidos = []
+	if xpath_cache:
+		xp_cache = xpath_cache.get(cache_key)
+		if xp_cache:
+			exito = espera_click(driver, xp_cache, timeout=timeout, scroll=True)
+			if exito:
+				print(f"[OK] {org_code} - tipo '{tipo}' abierto (cache)")
+				return True, xp_cache
 	for i, xp in enumerate(xpaths, 1):
 		print(f"[DEBUG] ({org_code}) Intento #{i}: XPath {xp}")
 		exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 		if exito:
+			if xpath_cache is not None:
+				xpath_cache[cache_key] = xp
 			if intentos_fallidos:
 				print(f"[OK] {org_code} - tipo '{tipo}' abierto en intento #{i}")
 				print(f"XPath exitoso:{xp}")
@@ -294,7 +297,7 @@ def abrir_tipo_personal(driver, modulo: Dict[str, Any], org_code: str, tipo: str
 		print(f"           - {xp_info}")
 	return False, None
 
-def seleccionar_area(driver, modulo: Dict[str, Any], org_code: str, area_value: str = "MUNICIPAL", timeout: int = 5) -> bool:
+def seleccionar_area(driver, modulo: Dict[str, Any], org_code: str, area_value: str = "MUNICIPAL", timeout: int = 3, xpath_cache=None) -> bool:
 	scraping_actions = modulo.get("scraping_actions", [])
 	config_area = None
 	for sa in scraping_actions:
@@ -318,11 +321,22 @@ def seleccionar_area(driver, modulo: Dict[str, Any], org_code: str, area_value: 
 		return False
 	print(f"[ACTION] {org_code} - Seleccionando área '{area_value}'")
 	
+	# Usar caché para acelerar búsqueda
+	cache_key = (org_code, area_value, "area")
 	intentos_fallidos = []
+	if xpath_cache:
+		xp_cache = xpath_cache.get(cache_key)
+		if xp_cache:
+			exito = espera_click(driver, xp_cache, timeout=timeout, scroll=True)
+			if exito:
+				print(f"[OK] ({org_code}) Área '{area_value}' seleccionada (cache)")
+				return True, xp_cache
 	for i, xp in enumerate(xpaths, 1):
 		print(f"[DEBUG] ({org_code}) Intento #{i}: probando XPath {xp}")
 		exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 		if exito:
+			if xpath_cache is not None:
+				xpath_cache[cache_key] = xp
 			if intentos_fallidos:
 				print(f"[OK] ({org_code}) Área '{area_value}' seleccionada en el intento #{i}")
 				print(f"     XPath exitoso: {xp}")
@@ -339,7 +353,7 @@ def seleccionar_area(driver, modulo: Dict[str, Any], org_code: str, area_value: 
 		print(f"           - {xp_info}")
 	return False, None
 
-def seleccionar_anio(driver, modulo: Dict[str, Any], org_code: str, year: int, timeout: int = 5) -> bool:
+def seleccionar_anio(driver, modulo: Dict[str, Any], org_code: str, year: int, timeout: int = 3, xpath_cache=None) -> bool:
 	scraping_actions = modulo.get("scraping_actions", [])
 	config_anio = None
 	for sa in scraping_actions:
@@ -357,11 +371,22 @@ def seleccionar_anio(driver, modulo: Dict[str, Any], org_code: str, year: int, t
 	xpaths = [pat.replace("{YEAR}", year_str) for pat in patterns]
 	print(f"[ACTION] {org_code} - Seleccionando año '{year_str}'")
 	
+	# Usar caché para acelerar búsqueda
+	cache_key = (org_code, year, "anio")
 	intentos_fallidos = []
+	if xpath_cache:
+		xp_cache = xpath_cache.get(cache_key)
+		if xp_cache:
+			exito = espera_click(driver, xp_cache, timeout=timeout, scroll=True)
+			if exito:
+				print(f"[OK] ({org_code}) Año '{year_str}' seleccionado (cache)")
+				return True, xp_cache
 	for i, xp in enumerate(xpaths, 1):
 		print(f"[DEBUG] ({org_code}) Año {year_str} - Intento #{i}: probando XPath {xp}")
 		exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 		if exito:
+			if xpath_cache is not None:
+				xpath_cache[cache_key] = xp
 			if intentos_fallidos:
 				print(f"[OK] ({org_code}) Año '{year_str}' seleccionado en el intento #{i}")
 				print(f"     XPath exitoso: {xp}")
@@ -379,7 +404,7 @@ def seleccionar_anio(driver, modulo: Dict[str, Any], org_code: str, year: int, t
 		print(f"           - {xp_info}")
 	return False, None
 
-def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, timeout: int = 5):
+def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, timeout: int = 3, xpath_cache=None):
 	"""
 	Selecciona el MES indicado (por ejemplo 'Enero'),
 	usando el bloque 'select_mes' de scraping_actions en actions_transparencia.json.
@@ -422,13 +447,23 @@ def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, t
 		xpaths.append(xp)
 
 	print(f"[ACTION] {org_code} - Seleccionando mes '{month_str}'")
+	# Usar caché para acelerar búsqueda
+	cache_key = (org_code, month, "mes")
 	intentos_fallidos = []
-
+	if xpath_cache:
+		xp_cache = xpath_cache.get(cache_key)
+		if xp_cache:
+			exito = espera_click(driver, xp_cache, timeout=timeout, scroll=True)
+			if exito:
+				print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado (cache)")
+				return True, xp_cache
 	for i, xp in enumerate(xpaths, 1):
 		print(f"[DEBUG] ({org_code}) Mes {month_str} - Intento #{i}: probando XPath {xp}")
 		exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 
 		if exito:
+			if xpath_cache is not None:
+				xpath_cache[cache_key] = xp
 			if intentos_fallidos:
 				print(f"[OK] ({org_code}) Mes '{month_str}' seleccionado en el intento #{i}")
 				print(f"     XPath exitoso: {xp}")
@@ -448,7 +483,7 @@ def seleccionar_mes(driver, modulo: Dict[str, Any], org_code: str, month: str, t
 
 	return False, None
 
-def descargar_csv(driver, modulo: Dict[str, Any], org_code: str, timeout: int =5):
+def descargar_csv(driver, modulo: Dict[str, Any], org_code: str, timeout: int = 3, xpath_cache=None):
     """
     Hace click en el botón/enlace de descarga CSV usando la configuración
     'download_csv' de scraping_actions en actions_transparencia.json.
@@ -479,13 +514,23 @@ def descargar_csv(driver, modulo: Dict[str, Any], org_code: str, timeout: int =5
         return False, None
 
     print(f"[ACTION] {org_code} - Intentando disparar descarga CSV")
+    # Usar caché para acelerar búsqueda
+    cache_key = (org_code, "csv")
     intentos_fallidos = []
-
+    if xpath_cache:
+        xp_cache = xpath_cache.get(cache_key)
+        if xp_cache:
+            exito = espera_click(driver, xp_cache, timeout=timeout, scroll=True)
+            if exito:
+                print(f"[OK] ({org_code}) CSV disparado (cache)")
+                return True, xp_cache
     for i, xp in enumerate(xpaths, 1):
         print(f"[DEBUG] ({org_code}) CSV - Intento #{i}: probando XPath {xp}")
         exito = espera_click(driver, xp, timeout=timeout, scroll=True)
 
         if exito:
+            if xpath_cache is not None:
+                xpath_cache[cache_key] = xp
             if intentos_fallidos:
                 print(f"[OK] ({org_code}) CSV disparado en el intento #{i}")
                 print(f"     XPath exitoso: {xp}")
