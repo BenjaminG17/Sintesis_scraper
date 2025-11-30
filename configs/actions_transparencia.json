@@ -57,7 +57,8 @@
             "//a[contains(normalize-space(.), 'AÑO {YEAR}')]",
             "//a[normalize-space(.)='{YEAR}']",
             "//a[contains(normalize-space(.), 'Municipalidad {YEAR}')]",   
-            "//*[contains(translate(text(), 'AÁÉÍÓÚÑ', 'AAEIOUN'), 'MUNICIPAL') and contains(text(), '{YEAR}')]"
+            "//*[contains(translate(text(), 'AÁÉÍÓÚÑ', 'AAEIOUN'), 'MUNICIPAL') and contains(text(), '{YEAR}')]",
+            "//a[contains(normalize-space(.), 'año {YEAR}')]"
           ]
         },
         {
@@ -65,6 +66,8 @@
           "month_patterns": [
             
             "//a[normalize-space(.)='{MONTH}']",
+            "//a[contains(normalize-space(.), '{MONTH}') and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
+            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}') and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
             "//a[contains(normalize-space(.), '{MONTH}')]",
             "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}')]",
             "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_PARTIAL}')]"
