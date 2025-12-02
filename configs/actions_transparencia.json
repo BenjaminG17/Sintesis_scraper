@@ -35,16 +35,11 @@
             {
               "value": "MUNICIPAL",
               "xpaths": [
-                "//a[contains(@class,'tab-link') and normalize-space(.)='Municipal']",
-                "//a[contains(@class,'tab-link') and normalize-space(.)='Municipalidad']",
-
-                "//a[normalize-space(.)='Municipalidad']",
-                "//a[normalize-space(.)='Municipal']",
-
-                
-                "//a[contains(normalize-space(.), 'Personal a Contrata Municipal')]",
-                "//a[contains(normalize-space(.), 'Personal de Planta Municipal')]"
-                
+                "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'municipal')]",
+                "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'municipalidad')]",
+                "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'municipio')]",
+                "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'personal a contrata')]",
+                "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'personal de planta')]"
               ]
             }
           ]
@@ -52,32 +47,37 @@
         {
           "type": "select_anio",
           "year_patterns": [
-            "//a[contains(normalize-space(.), 'Municipal {YEAR}')]",
-            "//a[contains(normalize-space(.), 'Año {YEAR}')]",
-            "//a[contains(normalize-space(.), 'AÑO {YEAR}')]",
-            "//a[normalize-space(.)='{YEAR}']",
-            "//a[contains(normalize-space(.), 'Municipalidad {YEAR}')]",   
-            "//*[contains(translate(text(), 'AÁÉÍÓÚÑ', 'AAEIOUN'), 'MUNICIPAL') and contains(text(), '{YEAR}')]",
-            "//a[contains(normalize-space(.), 'año {YEAR}')]"
-          ]
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content') or contains(@class, 'panel-content')]//a[contains(normalize-space(.), 'Municipal {YEAR}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), 'Año {YEAR}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), 'AÑO {YEAR}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content') or contains(@class, 'year-selector')]//a[normalize-space(.)='{YEAR}']",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), 'Municipalidad {YEAR}')]", 
+            
+            
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//*[contains(translate(text(), 'AÁÉÍÓÚÑ', 'AAEIOUN'), 'MUNICIPAL') and contains(text(), '{YEAR}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), 'año {YEAR}')]",
+             
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'personal a contrata {YEAR}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'personal de planta {YEAR}')]"          ]
         },
         {
           "type": "select_mes",
           "month_patterns": [
             
-            "//a[normalize-space(.)='{MONTH}']",
-            "//a[contains(normalize-space(.), '{MONTH}') and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
-            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}') and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
-            "//a[contains(normalize-space(.), '{MONTH}')]",
-            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}')]",
-            "//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_PARTIAL}')]"
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content') or contains(@class, 'month-selector')]//a[normalize-space(.)='{MONTH}']",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), '{MONTH}')]",
+            
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(normalize-space(.), '{MONTH}') and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
+
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}')]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_LOWER}')and not(contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), 'registro histórico'))]",
+            "//div[contains(@class, 'tabs-content') or contains(@class, 'tab-content')]//a[contains(translate(normalize-space(.), 'ÁÉÍÓÚÜÑABCDEFGHIJKLMNOPQRSTUVWXYZ', 'áéíóúüñabcdefghijklmnopqrstuvwxyz'), '{MONTH_PARTIAL}')]"       
           ]
         },
         {
           "type": "download_csv",
           "xpaths": [
-            "//button[contains(normalize-space(.), 'Descargar CSV')]",          
-            "//button[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÜÑ', 'abcdefghijklmnopqrstuvwxyzáéíóúüñ'), 'descargar csv')]"
+            "//button[contains(normalize-space(.), 'Descargar CSV')]"          
           ]
         }
       ]
