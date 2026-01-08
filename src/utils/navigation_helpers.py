@@ -9,7 +9,7 @@ from .browser_helpers import esperar_y_mover_csv, espera_click, _guardar_screens
 from .logging_helpers import setup_detailed_logger
 import time
 
-def _obtener_modulo_generico(actions_cfg: Dict[str, Any]) -> Dict[str, Any]:
+def obtener_modulo_generico(actions_cfg: Dict[str, Any]) -> Dict[str, Any]:
     modules = actions_cfg.get("modules", [])
     if not modules:
         raise ValueError("No hay módulos definidos en actions_transparencia.json")
@@ -40,7 +40,7 @@ def procesar_municipio(driver, org_code: str, settings: Dict[str, Any],
     env = load_env()
     download_root = env["DOWNLOAD_ROOT"]
     logger = setup_detailed_logger()
-    modulo = _obtener_modulo_generico(actions_cfg)
+    modulo = obtener_modulo_generico(actions_cfg)
     url_pattern = modulo.get("url_pattern")
     if not url_pattern:
         raise ValueError("El módulo no tiene 'url_pattern' definido.")

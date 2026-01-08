@@ -1,12 +1,12 @@
 {
   "base_url": "https://www.portaltransparencia.cl/PortalPdT/directorio-de-organismos-regulados/",
-  "org_start":31,
-  "org_end":40,
+  "org_start":111,
+  "org_end":120,
   
-  "start_year": 2018,
+  "start_year": 2020,
   "end_year":2025,  
-
   "orgs": [
+    "MU309"
   ],
 
   "excluded_orgs": [
@@ -41,7 +41,10 @@
     "MU027",        
     "MU028",
     "MU033",
-    "MU039"
+    "MU039",
+    "MU048",
+    "MU066",
+    "MU068"
 
   ],
 
