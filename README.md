@@ -51,41 +51,40 @@ El flujo principal está controlado por el archivo `src/main.py`. Puedes ejecuta
 ```bash
 python src/main.py
 ```
-En la carpeta `configs/setting.json` están todos los parámetros a cambiar
+En la carpeta `configs/setting.json` están todos los parámetros a modificar
 
 #### Ejecución para un municipio específico (ej: MU322 - Valparaíso):
 ```bash
 "orgs": [
     "MU322"
-  ],
+  ]
 ```
 
 #### Ejecución para un rango de años especificos
 ```bash
-"start_year": 2020 #Año inicial,     
-
-"end_year":2025 #Año final,
+"start_year": 2020 # Año inicial,     
+"end_year": 2025 # Año final,
 ```
 
 ### ¿Qué hace el script?
-- 1.- Lee la configuración desde configs/.
-- 2.- Inicializa un navegador Chrome controlado por Selenium.
-- 3.- Navega al portal de transparencia del municipio correspondiente.
-- 4.- Itera sobre los meses y años configurados.
-- 5.- Para cada período, selecciona el tipo de personal (CONTRATA/PLANTA) y descarga el CSV.
-- 6.- Guarda el archivo en la carpeta data/ correspondiente.
-- 7.- Genera logs de progreso y errores en la consola y/o archivos.
+1.- Lee la configuración desde configs/.
+2.- Inicializa un navegador Chrome controlado por Selenium.
+3.- Navega al portal de transparencia del municipio correspondiente.
+4.- Itera sobre los meses y años configurados.
+5.- Para cada período, selecciona el tipo de personal (CONTRATA/PLANTA) y descarga el CSV.
+6.- Guarda el archivo en la carpeta data/ correspondiente.
+7.- Genera logs de progreso y errores en la consola y/o archivos.
 
-🛠️ Stack Tecnológico
+### 🛠️ Stack Tecnológico
 - Lenguaje: Python 
 - Automatización Web: Selenium WebDriver
 - Manejo de Navegador: ChromeDriver, WebDriver Manager
 - Manejo de Datos/Archivos: JSON, CSV, Pandas (posible uso futuro)
 - Utilidades: Python-dotenv (variables de entorno), Logging
 
-📄 Licencia
+### 📄 Licencia
 - Este proyecto esta distribuido bajo la Licencia MIT. Consulta el archivo LICENSE para más información.
 
-👤 Autor & Contacto
+### 👤 Autor & Contacto
 Benjamín González – @BenjaminG17
 - Si este proyecto es útil para tu investigación o trabajo, ¡considera darle una estrella ⭐ en GitHub!
