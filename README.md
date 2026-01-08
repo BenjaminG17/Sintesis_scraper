@@ -37,6 +37,7 @@ Sintesis_scraper/
 ├── .env.example # Plantilla para variables de entorno sensibles
 ├── requirements.txt # Dependencias de Python
 └── README.md # Este archivo
+```
 
 ## 🚀 Comenzando
 
