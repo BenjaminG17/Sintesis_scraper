@@ -19,14 +19,15 @@ Un scraper automatizado y robusto desarrollado en Python para la extracción sis
 
 ## 📁 Estructura del Proyecto
 Sintesis_scraper/
+├── logs/ # Logs de la ejecución del scraper 
 ├── src/ # Código fuente principal
 │ ├── main.py # Punto de entrada y orquestador principal
 │ ├── scraper.py # Lógica central de scraping y descarga
 │ ├── driver_builder.py # Configuración y manejo del navegador Selenium
-│ └── utils/ # Módulos de utilidad (logs, manejo de archivos)
+│ └── utils/ # Módulos de utilidad (manejo de archivos)
 ├── configs/ # Configuraciones en JSON
-│ ├── acciones.json # Secuencias de automatización para Selenium
-│ └── municipios.json # Lista y metadatos de municipios
+│ ├── actions_transparencia.json # Secuencias de automatización para Selenium
+│ └── settings.json # Lista y metadatos de municipios
 ├── data/ # Datos extraídos (se genera automáticamente)
 │ └── MU001/
 │ ├── CONTRATA/
@@ -49,8 +50,8 @@ El flujo principal está controlado por el archivo `src/main.py`. Puedes ejecuta
 **Ejecución completa (extrae datos de todos los municipios):**
 ```bash
 python src/main.py
-
---> En la carpeta configs/setting.json están todos los parámetros a cambiar
+```
+En la carpeta configs/setting.json están todos los parámetros a cambiar
 
 ### Ejecución para un municipio específico (ej: MU322 - Valparaíso):
 "orgs": [
@@ -78,10 +79,8 @@ python src/main.py
 -Utilidades: Python-dotenv (variables de entorno), Logging
 
 📄 Licencia
-
-** Este proyecto esta distribuido bajo la Licencia MIT. Consulta el archivo LICENSE para más información.
+- Este proyecto esta distribuido bajo la Licencia MIT. Consulta el archivo LICENSE para más información.
 
 👤 Autor & Contacto
 Benjamín González – @BenjaminG17
-
-** Si este proyecto es útil para tu investigación o trabajo, ¡considera darle una estrella ⭐ en GitHub!
+- Si este proyecto es útil para tu investigación o trabajo, ¡considera darle una estrella ⭐ en GitHub!
