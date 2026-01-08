@@ -18,6 +18,7 @@ Un scraper automatizado y robusto desarrollado en Python para la extracción sis
 *   **Robustez:** Implementa manejo de errores, reintentos y logs detallados para procesamientos de larga duración.
 
 ## 📁 Estructura del Proyecto
+```markdown
 Sintesis_scraper/
 ├── logs/ # Logs de la ejecución del scraper 
 ├── src/ # Código fuente principal
@@ -62,18 +63,18 @@ En la carpeta `configs/setting.json` están todos los parámetros a modificar
 
 #### Ejecución para un rango de años especificos
 ```bash
-"start_year": 2020 # Año inicial,     
-"end_year": 2025 # Año final,
+"start_year": 2020 # Año inicial     
+"end_year": 2025 # Año final
 ```
 
 ### ¿Qué hace el script?
-1.- Lee la configuración desde configs/.
-2.- Inicializa un navegador Chrome controlado por Selenium.
-3.- Navega al portal de transparencia del municipio correspondiente.
-4.- Itera sobre los meses y años configurados.
-5.- Para cada período, selecciona el tipo de personal (CONTRATA/PLANTA) y descarga el CSV.
-6.- Guarda el archivo en la carpeta data/ correspondiente.
-7.- Genera logs de progreso y errores en la consola y/o archivos.
+1. Lee la configuración desde configs/.
+2. Inicializa un navegador Chrome controlado por Selenium.
+3. Navega al portal de transparencia del municipio correspondiente.
+4. Itera sobre los meses y años configurados.
+5. Para cada período, selecciona el tipo de personal (CONTRATA/PLANTA) y descarga el CSV.
+6. Guarda el archivo en la carpeta data/ correspondiente.
+7. Genera logs de progreso y errores en la consola y/o archivos.
 
 ### 🛠️ Stack Tecnológico
 - Lenguaje: Python 
