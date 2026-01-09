@@ -21,45 +21,45 @@ Un scraper automatizado y robusto desarrollado en Python para la extracción sis
 ```markdown
 SINTESIS_SCRAPER/
 │
-├── 📁 logs/                     # Logs de ejecución del sistema
+├── 📁 logs/                            # Logs de ejecución del sistema
 │
-├── 📁 src/                      # Código fuente principal
+├── 📁 src/                             # Código fuente principal
 │   │
-│   ├── main.py                 # 🎯 Punto de entrada principal
-│   ├── scraper.py              # 🔍 Lógica de scraping y descarga
-│   ├── driver_builder.py       # 🌐 Configuración de navegador Selenium
+│   ├── main.py                         # 🎯 Punto de entrada principal
+│   ├── scraper.py                      # 🔍 Lógica de scraping y descarga
+│   ├── driver_builder.py               # 🌐 Configuración de navegador Selenium
 │   │
-│   └── 📁 utils/               # 🛠️  Módulos de utilidad
+│   └── 📁 utils/                       # 🛠️  Módulos de utilidad
 │       └── (manejo de archivos)
 │
-├── 📁 configs/                 # ⚙️  Configuraciones del sistema
+├── 📁 configs/                         # ⚙️  Configuraciones del sistema
 │   │
-│   ├── actions_transparencia.json  # 🤖 Secuencias de automatización
-│   └── settings.json           # 🏙️  Metadatos de municipios
+│   ├── actions_transparencia.json      # 🤖 Secuencias de automatización
+│   └── settings.json                   # 🏙️  Metadatos de municipios
 │
-├── 📁 data/                    # 💾 Datos extraídos (generado)
+├── 📁 data/                            # 💾 Datos extraídos (generado)
 │   │
-│   └── 📁 MU001/               # 📍 Ejemplo: Municipio 001
+│   └── 📁 MU001/                       # 📍 Ejemplo: Municipio 001
 │       │
-│       ├── 📁 CONTRATA/        # 👥 Personal contratado
+│       ├── 📁 CONTRATA/                # 👥 Personal contratado
 │       │   │
-│       │   └── 📁 AÑO_X/       # 📅 Ejemplo: Año 2023
+│       │   └── 📁 AÑO_X/               # 📅 Ejemplo: Año 2023
 │       │       │
 │       │       └── 📄 mes_01.csv
 │       │       └── 📄 mes_02.csv
-│       │       └── ...         # 📊 Archivos CSV mensuales
+│       │       └── ...                 # 📊 Archivos CSV mensuales
 │       │
-│       └── 📁 PLANTA/          # 👥 Personal de planta
+│       └── 📁 PLANTA/                  # 👥 Personal de planta
 │           │
-│           └── 📁 AÑO_X/       # 📅 Ejemplo: Año 2023
+│           └── 📁 AÑO_X/               # 📅 Ejemplo: Año 2023
 │               │
 │               └── 📄 mes_01.csv
 │               └── 📄 mes_02.csv
-│               └── ...         # 📊 Archivos CSV mensuales
+│               └── ...                  # 📊 Archivos CSV mensuales
 │
-├── 📄 .env.example             # 🔐 Plantilla de variables de entorno
-├── 📄 requirements.txt         # 📦 Dependencias de Python
-└── 📄 README.md                # 📚 Documentación del proyecto
+├── 📄 .env.example                     # 🔐 Plantilla de variables de entorno
+├── 📄 requirements.txt                 # 📦 Dependencias de Python
+└── 📄 README.md                        # 📚 Documentación del proyecto
 ```
 
 ## 🚀 Comenzando
